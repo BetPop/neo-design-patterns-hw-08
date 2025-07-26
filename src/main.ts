@@ -66,6 +66,8 @@ const content = createDocument(format);
 const renderer = RendererFactory.create(format);
 const result = renderer.wrapDocument(content);
 
-// TODO: Implement the main logic
+// Після рендерингу виводимо статистику та час
+summary.printSummary();
+perf.printPerformance();
 
 output ? writeFileSync(output, result) : console.log(result);
