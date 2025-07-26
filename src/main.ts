@@ -1,53 +1,71 @@
-import { Author } from './models/Author';
-import { Book } from './models/Book';
-import { EBook } from './models/EBook';
-import { Copy } from './models/Copy';
-import { Reader } from './models/Reader';
-import { Library } from './models/Library';
-import { BorrowService } from './services/BorrowService';
+import { writeFileSync } from "fs";
+import { RendererFactory, RendererType } from "./factories/RendererFactory";
+import { Section } from "./nodes/Section";
+import { Paragraph } from "./nodes/Paragraph";
+import { List } from "./nodes/List";
+import { RenderEventPublisher } from "./RenderEventPublisher";
+import { RenderLoggerSubscriber } from "./subscribers/RenderLoggerSubscriber";
+import { SummaryCollector } from "./subscribers/SummaryCollector";
+import { PerformanceSubscriber } from "./subscribers/PerformanceSubscriber";
 
-// Створення автора та книг
-const author = new Author('John Doe');
-const book = new Book('The Great Book', 2020, author);
-const ebook = new EBook('Digital Book', 2021, author, '<https://example.com/ebook>');
+function createDocument(format: RendererType): string {
+  const renderer = RendererFactory.create(format);
+  const doc = new Section("Структурні патерни", renderer, [], 1);
 
-// Створення копій
-const copy1 = new Copy(book);
-const copy2 = new Copy(book);
+  const patterns = new Section(
+    "Основні патерни",
+    renderer,
+    [
+      new Paragraph("Розглянемо два важливих структурних патерни.", renderer),
+      new Section(
+        "Composite",
+        renderer,
+        [
+          new Paragraph(
+            "Дозволяє створювати деревоподібні структури об'єктів.",
+            renderer
+          ),
+          new List(
+            ["Спрощує структуру", "Гнучкий код", "Легка підтримка"],
+            renderer
+          ),
+        ],
+        2
+      ),
+      new Section(
+        "Bridge",
+        renderer,
+        [
+          new Paragraph("Розділяє абстракцію та реалізацію.", renderer),
+          new List(["Незалежні зміни", "Краща масштабованість"], renderer),
+        ],
+        2
+      ),
+    ],
+    2
+  );
 
-// Створення читача
-const reader = new Reader('1', 'Alice');
+  doc.add(patterns);
+  return doc.render();
+}
 
-// Створення бібліотеки та додавання об'єктів
-const library = new Library();
-library.addAuthor(author);
-library.addBook(book);
-library.addBook(ebook);
-library.addCopy(copy1);
-library.addCopy(copy2);
-library.addReader(reader);
+const { format, output } = {
+  format: (process.argv[2] || "markdown") as RendererType,
+  output: process.argv[3],
+};
 
-// Створення сервісу позичання
-const borrowService = new BorrowService();
+const logger = new RenderLoggerSubscriber();
+const summary = new SummaryCollector();
+const perf = new PerformanceSubscriber();
 
-// Демонстрація позичання
-console.log('Attempting to borrow copy1...');
-const borrowResult1 = borrowService.borrow(reader, copy1);
-console.log(`Borrow result: ${borrowResult1}`);
+RenderEventPublisher.subscribe(logger);
+RenderEventPublisher.subscribe(summary);
+RenderEventPublisher.subscribe(perf);
 
-console.log('Attempting to borrow copy1 again...');
-const borrowResult2 = borrowService.borrow(reader, copy1);
-console.log(`Borrow result: ${borrowResult2}`);
+const content = createDocument(format);
+const renderer = RendererFactory.create(format);
+const result = renderer.wrapDocument(content);
 
-// Демонстрація повернення
-console.log('Attempting to return copy1...');
-borrowService.returnBook(reader, copy1);
-console.log(`Copy1 is available: ${copy1.isCopyAvailable()}`);
+// TODO: Implement the main logic
 
-// Демонстрація поліморфізму
-console.log('\nBook descriptions:');
-console.log(book.getDescription());
-console.log(ebook.getDescription());
-
-// Спроба створити AbstractBook
-// const abstractBook = new AbstractBook('Test', 2022); // Повинно викликати помилку компіляції
+output ? writeFileSync(output, result) : console.log(result);
