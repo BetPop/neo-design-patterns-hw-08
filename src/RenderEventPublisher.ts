@@ -1,18 +1,20 @@
-import { RenderEventSubscriber } from "./interfaces/RenderEventSubscriber";
-import { RenderContext } from "./interfaces/RenderContext";
+import { RenderEventSubscriber } from './interfaces/RenderEventSubscriber';
+import { RenderContext } from './interfaces/RenderContext';
 
 export class RenderEventPublisher {
-  private static subscribers = new Set<RenderEventSubscriber>();
+  private static subscribers: RenderEventSubscriber[] = [];
 
   static subscribe(subscriber: RenderEventSubscriber): void {
-    // TODO: Implement the subscribe method
+    this.subscribers.push(subscriber);
   }
 
   static unsubscribe(subscriber: RenderEventSubscriber): void {
-    // TODO: Implement the unsubscribe method
+    this.subscribers = this.subscribers.filter(sub => sub !== subscriber);
   }
 
   static notify(context: RenderContext): void {
-    // TODO: Implement the notify method
+    for (const sub of this.subscribers) {
+      sub.update(context);
+    }
   }
 }
