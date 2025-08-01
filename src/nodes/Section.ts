@@ -1,5 +1,6 @@
 import { DocNode } from "../interfaces/DocNode";
 import { DocRenderer } from "../interfaces/DocRenderer";
+import { RenderEventPublisher } from "../RenderEventPublisher";
 
 export class Section implements DocNode {
   private children: DocNode[] = [];
@@ -18,11 +19,21 @@ export class Section implements DocNode {
   }
 
   render(): string {
+    const start = Date.now();
     let result = this.renderer.renderHeader(this.level, this.title);
 
     for (const child of this.children) {
       result += child.render();
     }
+
+    const end = Date.now();
+
+    RenderEventPublisher.notify({
+      type: "Section",
+      content: this.title,
+      level: this.level,
+      renderTime: end - start,
+    });
 
     return result;
   }
